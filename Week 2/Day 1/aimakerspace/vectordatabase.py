@@ -3,6 +3,12 @@ from collections import defaultdict
 from typing import List, Tuple, Callable
 from aimakerspace.openai_utils.embedding import EmbeddingModel
 import asyncio
+import enum
+
+
+class DistanceMeasure(enum.Enum):
+    cosine_similarity = "cosine_similarity"
+    euclidean_distance = "euclidean_distance"
 
 
 def cosine_similarity(vector_a: np.array, vector_b: np.array) -> float:
@@ -11,6 +17,11 @@ def cosine_similarity(vector_a: np.array, vector_b: np.array) -> float:
     norm_a = np.linalg.norm(vector_a)
     norm_b = np.linalg.norm(vector_b)
     return dot_product / (norm_a * norm_b)
+
+
+def euclidean_distance(vector_a: np.array, vector_b: np.array) -> float:
+    """Computes the euclidean distance between two vectors."""
+    return np.linalg.norm(vector_a - vector_b)
 
 
 class VectorDatabase:
@@ -25,19 +36,29 @@ class VectorDatabase:
         self,
         query_vector: np.array,
         k: int,
-        distance_measure: Callable = cosine_similarity,
+        distance_measure: DistanceMeasure = DistanceMeasure.cosine_similarity,
     ) -> List[Tuple[str, float]]:
+        distance_calc: Callable = cosine_similarity
+        if distance_measure == DistanceMeasure.euclidean_distance:
+            distance_calc = euclidean_distance
         scores = [
-            (key, distance_measure(query_vector, vector))
+            (key, distance_calc(query_vector, vector))
             for key, vector in self.vectors.items()
         ]
-        return sorted(scores, key=lambda x: x[1], reverse=True)[:k]
+
+        return sorted(
+            scores,
+            key=lambda x: x[1],
+            reverse=(
+                True if distance_measure == DistanceMeasure.cosine_similarity else False
+            ),
+        )[:k]
 
     def search_by_text(
         self,
         query_text: str,
         k: int,
-        distance_measure: Callable = cosine_similarity,
+        distance_measure: DistanceMeasure = DistanceMeasure.cosine_similarity,
         return_as_text: bool = False,
     ) -> List[Tuple[str, float]]:
         query_vector = self.embedding_model.get_embedding(query_text)
@@ -67,7 +88,11 @@ if __name__ == "__main__":
     vector_db = asyncio.run(vector_db.abuild_from_list(list_of_text))
     k = 2
 
-    searched_vector = vector_db.search_by_text("I think fruit is awesome!", k=k)
+    searched_vector = vector_db.search_by_text(
+        "I think fruit is awesome!",
+        k=k,
+        distance_measure=DistanceMeasure.euclidean_distance,
+    )
     print(f"Closest {k} vector(s):", searched_vector)
 
     retrieved_vector = vector_db.retrieve_from_key(
@@ -76,6 +101,8 @@ if __name__ == "__main__":
     print("Retrieved vector:", retrieved_vector)
 
     relevant_texts = vector_db.search_by_text(
-        "I think fruit is awesome!", k=k, return_as_text=True
+        "I think fruit is awesome!",
+        k=k,
+        return_as_text=True,
     )
     print(f"Closest {k} text(s):", relevant_texts)
