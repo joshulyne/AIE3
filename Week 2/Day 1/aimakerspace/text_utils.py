@@ -1,4 +1,5 @@
 import os
+import PyPDF2
 from typing import List
 
 
@@ -13,6 +14,8 @@ class TextFileLoader:
             self.load_directory()
         elif os.path.isfile(self.path) and self.path.endswith(".txt"):
             self.load_file()
+        elif os.path.isfile(self.path) and self.path.endswith(".pdf"):
+            self.load_pdf()
         else:
             raise ValueError(
                 "Provided path is neither a valid directory nor a .txt file."
@@ -21,6 +24,17 @@ class TextFileLoader:
     def load_file(self):
         with open(self.path, "r", encoding=self.encoding) as f:
             self.documents.append(f.read())
+
+    def load_pdf(self):
+        with open(self.path, "rb") as file:
+            reader = PyPDF2.PdfReader(file)
+            num_pages = len(reader.pages)
+
+            text = []
+            for page_num in range(num_pages):
+                page = reader.pages[page_num]
+                text.append(page.extract_text())
+            self.documents.append(" ".join(text))
 
     def load_directory(self):
         for root, _, files in os.walk(self.path):
