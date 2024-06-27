@@ -9,7 +9,7 @@
 
 In today's assignment, we'll be learning all about LlamaIndex!
 
-The Colab version of the Assignment can be found [here](https://colab.research.google.com/drive/1ZdEKHR3jL_1qeSfCz_F9mlXtpncyWDHo?usp=sharing).
+The Colab version of the Assignment can be found [here](https://colab.research.google.com/drive/1rWT7MZ8-WzzoxkErUDxz05Dbdw6o18Zv?usp=sharing).
 
 ## Build 🏗️
 
